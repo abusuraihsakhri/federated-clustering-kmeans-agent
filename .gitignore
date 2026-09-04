@@ -8,3 +8,18 @@ output.csv
 dist/
 build/
 *.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

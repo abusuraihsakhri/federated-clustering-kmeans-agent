@@ -1,6 +1,6 @@
 # Federated Clustering Kmeans Agent
 
-> **Domain:** Privacy-Preserving Healthcare & Federated Computing  
+> **Domain:** Privacy-Preserving Healthcare & Federated Computing
 > **Reference Guidelines & Standards:** `HIPAA Safe Harbor §164.514 & Differential Privacy RDP`
 
 <div align="center">
@@ -18,60 +18,91 @@
 
 ## 📖 What It Does
 
-**Federated Clustering Kmeans Agent** is an advanced analytical and computational platform implementing Privacy-preserving federated Lloyd's k-means clustering with DP perturbation.
+**Federated Clustering Kmeans Agent** is an analytical platform implementing privacy-preserving federated Lloyd's k-means clustering with differential privacy perturbation. It provides a multi-agent evaluation system with specialized workers for quality control, safety escalation, and protocol conformance.
 
 ---
 
 ## ⚙️ Key Capabilities & Algorithmic Modules
 
-- **Deterministic Calculation Engine**: Strict compliance with standard reference formulations and thresholds.
-- **Risk & Urgency Classification**: Multi-tier categorization with automated clinical/operational action recommendations.
-- **Validation & Guardrails**: Rigorous input bounds checking and anomaly detection.
+- **Multi-Agent Evaluation System**: Specialized workers (InvariantQCWorker, SafetyEscalationWorker, ProtocolConformanceWorker) evaluate tasks independently
+- **Zero-PHI Outbound Interceptor**: Active regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers
+- **Tamper-Evident HMAC-SHA256 Audit Trail**: Chained, cryptographically signed logs for every evaluation
+- **FastAPI REST API**: OpenAPI 3.1 REST endpoints with Prometheus-compatible metrics
+- **Batch Processing**: CSV-based batch evaluation with result export
+- **Enrichment Suite**: 8 domain-specific engines for secure aggregation, differential privacy, Byzantine resilience, and compliance reporting
+
+---
+
+## 💻 Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/abusuraihsakhri/federated-clustering-kmeans-agent.git
+cd federated-clustering-kmeans-agent
+
+# Install dependencies
+pip install fastapi uvicorn pydantic pytest
+
+# Optional: Set audit secret key for persistent audit integrity
+export AUDIT_SECRET_KEY="your-secure-random-key-here"
+```
 
 ---
 
 ## 💻 CLI Quickstart & Usage
 
-### 1. Guided Interactive Mode
+### 1. Run Single Task Evaluation
 ```bash
-python cli.py
+python cli.py audit --task-id TASK-001 --target TARGET-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
 ```
 
-### 2. Direct Parameterized Evaluation
+### 2. Interactive Chat Query
 ```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
+python cli.py chat "What is the system status?"
+```
+
+### 3. Batch Process CSV Records
+```bash
+python cli.py batch -i sample.csv -o results.csv
+```
+
+### 4. Verify Audit Trail Integrity
+```bash
+python cli.py verify-audit
+```
+
+### 5. Launch REST API Server
+```bash
+python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
 ### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
+- `--task-id`: Unique task identifier (required)
+- `--target`: Target entity identifier (required)
+- `--primary`: Primary metric value (float, required)
+- `--secondary`: Secondary metric value (float, optional)
+- `--critical`: Flag for critical/emergency status (boolean)
+- `--status`: Status descriptor (e.g., NOMINAL, DISCORDANT, ANOMALY)
 
-### Input Data Schema
+### Input Data Schema (CSV)
 
 | Field | Description | Requirement |
 |:------|:------------|:------------|
-| `task_id` | Parameter / observation metric | Required |
-| `target_identifier` | Parameter / observation metric | Required |
-| `primary_metric` | Parameter / observation metric | Required |
-| `secondary_metric` | Parameter / observation metric | Required |
-| `is_critical_flag` | Parameter / observation metric | Required |
-| `status_descriptor` | Parameter / observation metric | Required |
+| `task_id` | Unique task identifier | Required |
+| `target_identifier` | Target entity identifier | Required |
+| `primary_metric` | Primary measurement value | Required |
+| `secondary_metric` | Secondary measurement value | Optional |
+| `is_critical_flag` | Critical flag (true/false) | Optional |
+| `status_descriptor` | Status descriptor | Optional |
 
 ---
 
-## 🛡️ Security & Enterprise Architecture
+## 🛡️ Security Architecture
 
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
+* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOB, and patient names.
 * **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
+* **Input Validation:** Pydantic models with bounds checking and path traversal prevention.
+* **Configurable Audit Key:** Set `AUDIT_SECRET_KEY` environment variable for persistent audit integrity.
 
 ---
 
@@ -86,7 +117,7 @@ pytest -v
 Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 1000
 ```
 
 ---
@@ -95,5 +126,49 @@ python simulator.py --tasks 1000 --concurrency 8
 
 ```bash
 docker build -t federated-clustering-kmeans-agent .
-docker run -p 8000:8000 federated-clustering-kmeans-agent
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY="your-secure-key" federated-clustering-kmeans-agent
 ```
+
+Or using Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+---
+
+## 📁 Project Structure
+
+```
+federated-clustering-kmeans-agent/
+├── agents/                  # Multi-agent evaluation system
+│   ├── api.py              # FastAPI REST endpoints
+│   ├── base.py             # Security, PHI guard, audit trail
+│   ├── models.py           # Pydantic data models
+│   ├── supervisor.py       # Master orchestrator
+│   ├── workers.py          # Specialized evaluation workers
+│   ├── llm_factory.py      # LLM provider factory
+│   ├── learning.py         # Bayesian calibration engine
+│   ├── metrics.py          # Prometheus metrics collector
+│   └── streamer.py         # WebSocket telemetry broadcaster
+├── fed_kmeans/             # Federated K-means clustering module
+│   ├── agents.py           # Sub-agent coordination
+│   ├── engine.py           # Core algorithmic engine
+│   ├── models.py           # Data models
+│   ├── cli.py              # CLI interface
+│   └── server.py           # FastAPI server factory
+├── tests/                  # Test suite
+├── web/                    # Operations console (HTML)
+├── cli.py                  # Main CLI entry point
+├── enrichment.py           # Domain-specific enrichment engines
+├── simulator.py            # High-throughput simulation
+├── pyproject.toml          # Project configuration
+├── Dockerfile              # Container build
+└── docker-compose.yml      # Container orchestration
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

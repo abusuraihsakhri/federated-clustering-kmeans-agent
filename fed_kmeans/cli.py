@@ -11,6 +11,13 @@ from .agents import FedKMeansCoordinator
 coordinator = FedKMeansCoordinator()
 
 
+def _parse_bool(value: str) -> bool:
+    """Parse a string as a boolean, handling common representations."""
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("true", "1", "yes", "y", "on")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="federated-clustering-kmeans-agent", description="FedKMeans: Privacy-Preserving Federated Lloyd's Clustering Agent")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -83,7 +90,7 @@ def main(argv=None):
                 primary_metric=float(r.get("primary_metric", 15.0)),
                 secondary_metric=float(r.get("secondary_metric", 5.0)),
                 status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                is_critical_flag=bool(r.get("is_critical_flag", False)),
+                is_critical_flag=_parse_bool(r.get("is_critical_flag", "false")),
             )
             dossier = coordinator.process(payload)
             row_dict = dict(r)

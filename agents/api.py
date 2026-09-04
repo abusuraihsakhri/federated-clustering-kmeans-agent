@@ -4,7 +4,7 @@ FastAPI REST API Server for Federated Clustering Kmeans Agent.
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from .base import AuditLogger, PHIGuard
+from .base import AuditLogger, PHIGuard, SecurityException
 from .models import SystemTaskPayload, ConsensusDossier
 from .supervisor import SystemSupervisor
 
@@ -37,8 +37,13 @@ def metrics():
 
 @app.post("/api/audit")
 def api_audit(payload: SystemTaskPayload):
-    dossier = supervisor.process_task(payload)
-    return dossier.to_dict()
+    try:
+        dossier = supervisor.process_task(payload)
+        return dossier.to_dict()
+    except SecurityException as e:
+        raise HTTPException(status_code=422, detail=f"Security violation: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal processing error: {str(e)}")
 
 
 @app.post("/api/chat")
@@ -46,6 +51,8 @@ def api_chat(req: ChatRequest):
     try:
         ans = supervisor.query_supervisory_chat(req.query)
         return {"response": ans}
+    except SecurityException as e:
+        raise HTTPException(status_code=422, detail=f"Security violation: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
