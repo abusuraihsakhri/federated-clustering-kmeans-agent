@@ -6,10 +6,10 @@ differential privacy: initial centroids and aggregates can disclose information.
 Passing raw site records to this function is a simulation, not private transport.
 """
 import math
-from typing import Any
+from typing import Any, Optional
 
 
-def _vector(values: Any, dimensions: int | None = None) -> list[float]:
+def _vector(values: Any, dimensions: Optional[int] = None) -> list[float]:
     if not isinstance(values, (list, tuple)) or not values:
         raise ValueError("Each feature vector must be a nonempty list")
     if dimensions is not None and len(values) != dimensions:
