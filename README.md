@@ -1,5 +1,7 @@
 # Federated Clustering K-means Agent
 
+### [Open the Live Application →](https://abusuraihsakhri.github.io/federated-clustering-kmeans-agent/)
+
 An executable, dependency-light **multi-site Lloyd k-means simulator**, with the repository's existing task-audit CLI, FastAPI endpoints, and validation utilities.
 
 The clustering implementation computes cluster sums and counts at each site, aggregates those statistics, and updates centroids. It is a **single-process simulation**, not an encrypted federated-learning deployment, secure aggregation protocol, differential privacy mechanism, or validated clinical system.
@@ -10,7 +12,7 @@ Open [`index.html`](index.html) in a modern browser, or run `python -m http.serv
 
 The browser simulator uses vanilla JavaScript and works without a Python runtime, CDN, backend, or build step. Enter or import JSON describing sites and initial centroids, inspect centroid coordinates, assignments by site, convergence and inertia, then export JSON results. All computations remain in the local browser tab; the application does not transmit data.
 
-The GitHub Pages workflow publishes these static files **when Pages is enabled for GitHub Actions**. Do not interpret the repository's presence as confirmation that a public Pages URL is active.
+The GitHub Pages workflow deploys the static files and checks published HTML and JavaScript over HTTPS after each release.
 
 ## Python quick start
 
