@@ -1,8 +1,10 @@
 """
 FastAPI REST API Server for Federated Clustering Kmeans Agent.
 """
+from pathlib import Path
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from fed_kmeans.clustering import federated_kmeans
 from .base import AuditLogger, PHIGuard, SecurityException
@@ -16,6 +18,11 @@ app = FastAPI(
     description="Enterprise Distributed Component Platform (Privacy-Preserving Federated Healthcare & FHE)",
     version="3.0.0-ENTERPRISE",
 )
+
+
+console_dir = Path(__file__).resolve().parent.parent / "web"
+if console_dir.is_dir():
+    app.mount("/console", StaticFiles(directory=str(console_dir), html=True), name="console")
 
 
 class ClusteringRequest(BaseModel):
