@@ -1,0 +1,9 @@
+{
+  "sites": [
+    [[0, 0], [0, 2]],
+    [[10, 10], [10, 12]]
+  ],
+  "initial_centroids": [[0, 0], [10, 10]],
+  "max_iterations": 50,
+  "tolerance": 0.000001
+}
