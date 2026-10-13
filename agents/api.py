@@ -15,7 +15,7 @@ supervisor = SystemSupervisor(model_provider="mock")
 
 app = FastAPI(
     title="Federated Clustering Kmeans Agent API",
-    description="Enterprise Distributed Component Platform (Privacy-Preserving Federated Healthcare & FHE)",
+    description="Local threshold-based telemetry auditing and k-means simulation. No secure aggregation, differential privacy, or compliance guarantee.",
     version="3.0.0-ENTERPRISE",
 )
 
