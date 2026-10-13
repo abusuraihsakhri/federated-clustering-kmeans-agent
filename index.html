@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Local multi-site Lloyd k-means clustering demonstration with aggregate-only centroid updates.">
+  <title>Federated k-means | Local simulator</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--panel:#162235;--line:#33445c;--text:#eef3fc;--muted:#bac9df;--accent:#77b4ff;--ok:#a6edcd}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    main{max-width:1100px;margin:auto;padding:28px 20px 60px}
+    h1{font-size:clamp(1.6rem,4vw,2.35rem);line-height:1.2;margin:0 0 10px}
+    h2{font-size:1.1rem;margin:0 0 14px}
+    p{margin:8px 0 16px;color:var(--muted)}
+    .eyebrow{color:var(--accent);letter-spacing:.12em;text-transform:uppercase;font-size:.78rem;font-weight:700}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:24px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+    textarea{width:100%;min-height:310px;resize:vertical;padding:13px;border:1px solid var(--line);border-radius:8px;background:#0a1525;color:var(--text);font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+    label{display:block;margin-bottom:8px;font-weight:600}
+    .hint{font-size:.84rem;margin:8px 0;color:var(--muted)}
+    .actions{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+    button,.upload{background:var(--accent);color:#081527;border:1px solid transparent;border-radius:7px;padding:9px 15px;font:inherit;font-weight:700;cursor:pointer}
+    button.secondary,.upload{background:transparent;border-color:#8ea8c6;color:var(--text)}
+    button:hover,.upload:hover{filter:brightness(1.15)}
+    :focus-visible{outline:3px solid #eab6ff;outline-offset:3px}
+    .upload{display:inline-block;position:relative;overflow:hidden}
+    .upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+    .stat{border:1px solid var(--line);padding:11px;border-radius:8px}
+    .stat b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums;color:var(--ok)}
+    .stat small{color:var(--muted)}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+    th{color:var(--muted)}
+    td{overflow-wrap:anywhere}
+    .table-scroll{overflow-x:auto}
+    #error{color:#ffd0d0;white-space:pre-wrap}
+    #error:empty{display:none}
+    footer{margin-top:20px;font-size:.86rem;color:var(--muted)}
+    a{color:var(--accent)}
+    @media(max-width:760px){.layout{grid-template-columns:1fr}.panel{padding:15px}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  </style>
+  <script src="./cluster.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">In-browser research simulator</div>
+    <h1>Federated Lloyd k-means</h1>
+    <p>Explore centroid updates from per-site cluster sums and counts. Provide synthetic, non-sensitive numerical observations grouped by site, plus starting centroids.</p>
+  </header>
+  <section class="layout" aria-label="Clustering simulator">
+    <div class="panel">
+      <h2>1. Define sites and centroids</h2>
+      <label for="dataset">JSON dataset</label>
+      <textarea id="dataset" spellcheck="false" aria-describedby="jsonHelp">{
+  "sites": [
+    [[0, 0], [0, 2]],
+    [[10, 10], [10, 12]]
+  ],
+  "initial_centroids": [[0, 0], [10, 10]],
+  "max_iterations": 50,
+  "tolerance": 0.000001
+}</textarea>
+      <p class="hint" id="jsonHelp">Each site is an array of numeric observations. Centroids and observations must have the same number of features (1–32).</p>
+      <div class="actions">
+        <button type="button" id="run">Run clustering</button>
+        <button type="button" class="secondary" id="example">Reset example</button>
+        <label class="upload">Import JSON <input type="file" id="upload" accept=".json,application/json" aria-label="Import a local JSON dataset"></label>
+      </div>
+      <div id="error" role="alert" aria-live="assertive"></div>
+    </div>
+    <div class="panel">
+      <h2>2. Centroid results</h2>
+      <div class="summary">
+        <div class="stat"><small>Iterations</small><b id="iterations">—</b></div>
+        <div class="stat"><small>Converged</small><b id="converged">—</b></div>
+        <div class="stat"><small>Squared-distance inertia</small><b id="inertia">—</b></div>
+        <div class="stat"><small>Total observations</small><b id="observations">—</b></div>
+      </div>
+      <div class="table-scroll">
+        <table><thead><tr><th>Cluster</th><th>Centroid</th><th>Observations</th></tr></thead><tbody id="centroids"><tr><td colspan="3">Run the example to view results.</td></tr></tbody></table>
+      </div>
+      <h2 style="margin-top:22px">Assignment counts by site</h2>
+      <div class="table-scroll"><table><thead id="siteHead"><tr><th>Site</th><th>Counts by cluster</th></tr></thead><tbody id="siteCounts"><tr><td colspan="2">No results yet.</td></tr></tbody></table></div>
+      <div class="actions"><button type="button" class="secondary" id="export" disabled>Export results JSON</button></div>
+    </div>
+  </section>
+  <footer>
+    <strong>Privacy and scope:</strong> All calculations on this page run in your browser. No data is uploaded by this app. This is an in-process simulation of site aggregation—not encrypted secure aggregation, differential privacy, or a production federated protocol. Do not enter patient data.
+    <p><a href="https://github.com/abusuraihsakhri/federated-clustering-kmeans-agent">Source and Python CLI</a> · <a href="./web/index.html">Server-dependent audit console</a></p>
+  </footer>
+</main>
+</body>
+</html>
