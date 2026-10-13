@@ -49,3 +49,19 @@ jobs:
     steps:
       - uses: actions/deploy-pages@v4
         id: deployment
+      - name: Smoke test live site and JavaScript asset
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -eu
+          base="${SITE_URL%/}"
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if curl --fail --silent --show-error --location --max-time 20 "$base/" -o /tmp/served-index.html; then
+              break
+            fi
+            sleep 5
+          done
+          test -s /tmp/served-index.html
+          grep -Fq "Federated Lloyd k-means" /tmp/served-index.html
+          curl --fail --silent --show-error --location --max-time 20 "$base/cluster.js" -o /tmp/served-cluster.js
+          grep -Fq "function federatedKmeans(input)" /tmp/served-cluster.js
