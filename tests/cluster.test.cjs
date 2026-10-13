@@ -1,6 +1,9 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const {spawnSync} = require("node:child_process");
+const path = require("node:path");
 const {federatedKmeans} = require("../cluster.js");
 
 test("two-site means and inertia", () => {
@@ -25,4 +28,13 @@ test("rejects malformed data", () => {
     {sites: [[[0]]], initial_centroids: [[0]], tolerance: -1},
     {sites: [[[0]]], initial_centroids: [[0]], max_iterations: 0},
   ]) assert.throws(() => federatedKmeans(data));
+});
+
+test("backend console has valid JS and no fabricated fallback", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../web/index.html"), "utf8");
+  const match = html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(match, "console script must exist");
+  const check = spawnSync(process.execPath, ["--check"], {input: match[1], encoding: "utf8"});
+  assert.equal(check.status, 0, check.stderr);
+  assert.doesNotMatch(html, /Offline \/ Simulation Output/);
 });
