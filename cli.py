@@ -2,6 +2,7 @@
 Command Line Interface for Federated Clustering Kmeans Agent.
 """
 import argparse
+from fed_kmeans.clustering import federated_kmeans
 import csv
 import json
 import sys
@@ -43,6 +44,11 @@ def main(argv=None):
 
     # Verify Audit
     subparsers.add_parser("verify-audit", help="Verify HMAC audit trail integrity")
+
+    # Local federated-clustering simulation (never transmits site records).
+    p_cluster = subparsers.add_parser("cluster", help="Run aggregate-based Lloyd k-means over site arrays in JSON")
+    p_cluster.add_argument("-i", "--input", required=True, help="Input JSON file with sites and initial_centroids")
+    p_cluster.add_argument("-o", "--output", default="-", help="Result JSON path, or - for stdout")
 
     # Serve
     p_serve = subparsers.add_parser("serve", help="Launch FastAPI REST server")
@@ -116,6 +122,22 @@ def main(argv=None):
             writer.writeheader()
             writer.writerows(out_rows)
         print(f"Processed {len(out_rows)} records -> {args.output}")
+        return 0
+
+    if args.command == "cluster":
+        with open(args.input, "r", encoding="utf-8") as source:
+            data = json.load(source)
+        result = federated_kmeans(
+            data["sites"], data["initial_centroids"],
+            max_iterations=data.get("max_iterations", 100),
+            tolerance=data.get("tolerance", 1e-6),
+        )
+        content = json.dumps(result, indent=2, allow_nan=False)
+        if args.output == "-":
+            print(content)
+        else:
+            with open(args.output, "w", encoding="utf-8") as target:
+                target.write(content + "\n")
         return 0
 
     if args.command == "serve":
