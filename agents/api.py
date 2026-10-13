@@ -3,7 +3,8 @@ FastAPI REST API Server for Federated Clustering Kmeans Agent.
 """
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from fed_kmeans.clustering import federated_kmeans
 from .base import AuditLogger, PHIGuard, SecurityException
 from .models import SystemTaskPayload, ConsensusDossier
 from .supervisor import SystemSupervisor
@@ -15,6 +16,13 @@ app = FastAPI(
     description="Enterprise Distributed Component Platform (Privacy-Preserving Federated Healthcare & FHE)",
     version="3.0.0-ENTERPRISE",
 )
+
+
+class ClusteringRequest(BaseModel):
+    sites: List[List[List[float]]]
+    initial_centroids: List[List[float]]
+    max_iterations: int = Field(default=50, ge=1, le=50)
+    tolerance: float = Field(default=1e-6, ge=0, allow_inf_nan=False)
 
 
 class ChatRequest(BaseModel):
@@ -43,7 +51,7 @@ def api_audit(payload: SystemTaskPayload):
     except SecurityException as e:
         raise HTTPException(status_code=422, detail=f"Security violation: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal processing error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal processing error")
 
 
 @app.post("/api/chat")
@@ -60,3 +68,15 @@ def api_chat(req: ChatRequest):
 @app.get("/api/audit/logs")
 def api_audit_logs():
     return {"audit_trail": AuditLogger.get_trail(), "verified": AuditLogger.verify_integrity()}
+
+
+@app.post("/api/cluster")
+def api_cluster(req: ClusteringRequest):
+    """Simulate site-local aggregation. Raw data arrives at this API: not private transport."""
+    try:
+        return federated_kmeans(
+            req.sites, req.initial_centroids,
+            max_iterations=req.max_iterations, tolerance=req.tolerance,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
