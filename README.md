@@ -1,174 +1,82 @@
-# Federated Clustering Kmeans Agent
+# Federated Clustering K-means Agent
 
-> **Domain:** Privacy-Preserving Healthcare & Federated Computing
-> **Reference Guidelines & Standards:** `HIPAA Safe Harbor §164.514 & Differential Privacy RDP`
+An executable, dependency-light **multi-site Lloyd k-means simulator**, with the repository's existing task-audit CLI, FastAPI endpoints, and validation utilities.
 
-<div align="center">
+The clustering implementation computes cluster sums and counts at each site, aggregates those statistics, and updates centroids. It is a **single-process simulation**, not an encrypted federated-learning deployment, secure aggregation protocol, differential privacy mechanism, or validated clinical system.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## Browser application
 
-</div>
+Open [`index.html`](index.html) in a modern browser, or run `python -m http.server 8080` and visit `http://localhost:8080/`.
 
----
+The browser simulator uses vanilla JavaScript and works without a Python runtime, CDN, backend, or build step. Enter or import JSON describing sites and initial centroids, inspect centroid coordinates, assignments by site, convergence and inertia, then export JSON results. All computations remain in the local browser tab; the application does not transmit data.
 
-## 📖 What It Does
+The GitHub Pages workflow publishes these static files **when Pages is enabled for GitHub Actions**. Do not interpret the repository's presence as confirmation that a public Pages URL is active.
 
-**Federated Clustering Kmeans Agent** is an analytical platform implementing privacy-preserving federated Lloyd's k-means clustering with differential privacy perturbation. It provides a multi-agent evaluation system with specialized workers for quality control, safety escalation, and protocol conformance.
+## Python quick start
 
----
-
-## ⚙️ Key Capabilities & Algorithmic Modules
-
-- **Multi-Agent Evaluation System**: Specialized workers (InvariantQCWorker, SafetyEscalationWorker, ProtocolConformanceWorker) evaluate tasks independently
-- **Zero-PHI Outbound Interceptor**: Active regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers
-- **Tamper-Evident HMAC-SHA256 Audit Trail**: Chained, cryptographically signed logs for every evaluation
-- **FastAPI REST API**: OpenAPI 3.1 REST endpoints with Prometheus-compatible metrics
-- **Batch Processing**: CSV-based batch evaluation with result export
-- **Enrichment Suite**: 8 domain-specific engines for secure aggregation, differential privacy, Byzantine resilience, and compliance reporting
-
----
-
-## 💻 Installation
+Python 3.9+:
 
 ```bash
-# Clone the repository
-git clone https://github.com/abusuraihsakhri/federated-clustering-kmeans-agent.git
-cd federated-clustering-kmeans-agent
-
-# Install dependencies
-pip install fastapi uvicorn pydantic pytest
-
-# Optional: Set audit secret key for persistent audit integrity
-export AUDIT_SECRET_KEY="your-secure-random-key-here"
+python -m pip install -e ".[api,test]"
+python cli.py cluster -i sample_clustering.json -o clustering_results.json
+python -m fed_kmeans.cli cluster -i sample_clustering.json
+python -m pytest -q
 ```
 
----
+The two-site sample has initial centroids `[0,0]` and `[10,10]`, converging to `[0,1]` and `[10,11]` with final squared-distance inertia `4`.
 
-## 💻 CLI Quickstart & Usage
+### Input format
 
-### 1. Run Single Task Evaluation
+```json
+{
+  "sites": [
+    [[0, 0], [0, 2]],
+    [[10, 10], [10, 12]]
+  ],
+  "initial_centroids": [[0, 0], [10, 10]],
+  "max_iterations": 50,
+  "tolerance": 0.000001
+}
+```
+
+Sites are nonempty lists of feature vectors. Initial centroids are supplied explicitly; cluster IDs follow their input order. Ties are assigned to the first centroid, and empty clusters retain their previous centroid. The simulation limits input to 64 sites, 20,000 observations, 32 features, 20 clusters, and 200 iterations (the API limits iterations to 50). Use synthetic or appropriately de-identified non-sensitive data only.
+
+## Existing audit tools and API
+
+The separate task-audit subsystems are retained. Their threshold-based worker alerts are **not k-means clustering calculations**:
+
 ```bash
 python cli.py audit --task-id TASK-001 --target TARGET-01 --primary 28.5 --secondary 14.2 --critical --status DISCORDANT
-```
-
-### 2. Interactive Chat Query
-```bash
-python cli.py chat "What is the system status?"
-```
-
-### 3. Batch Process CSV Records
-```bash
 python cli.py batch -i sample.csv -o results.csv
-```
-
-### 4. Verify Audit Trail Integrity
-```bash
 python cli.py verify-audit
-```
-
-### 5. Launch REST API Server
-```bash
 python cli.py serve --host 127.0.0.1 --port 8000
 ```
 
-### Parameter Reference
-- `--task-id`: Unique task identifier (required)
-- `--target`: Target entity identifier (required)
-- `--primary`: Primary metric value (float, required)
-- `--secondary`: Secondary metric value (float, optional)
-- `--critical`: Flag for critical/emergency status (boolean)
-- `--status`: Status descriptor (e.g., NOMINAL, DISCORDANT, ANOMALY)
-
-### Input Data Schema (CSV)
-
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `task_id` | Unique task identifier | Required |
-| `target_identifier` | Target entity identifier | Required |
-| `primary_metric` | Primary measurement value | Required |
-| `secondary_metric` | Secondary measurement value | Optional |
-| `is_critical_flag` | Critical flag (true/false) | Optional |
-| `status_descriptor` | Status descriptor | Optional |
-
----
-
-## 🛡️ Security Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active regex inspection blocking SSNs, MRNs, phone numbers, emails, DOB, and patient names.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Input Validation:** Pydantic models with bounds checking and path traversal prevention.
-* **Configurable Audit Key:** Set `AUDIT_SECRET_KEY` environment variable for persistent audit integrity.
-
----
-
-## 🧪 Testing & Verification
-
-Run the automated test suite:
+With the server running, visit `http://127.0.0.1:8000/console/index.html` to use the backend-dependent audit console; `/docs` contains the generated API schema. Endpoints include `/health`, `/metrics`, `/api/audit`, `/api/chat`, `/api/audit/logs`, and `/api/cluster`. The last accepts the JSON format above:
 
 ```bash
-pytest -v
+curl -s -X POST http://127.0.0.1:8000/api/cluster \
+  -H "Content-Type: application/json" \
+  --data-binary @sample_clustering.json
 ```
 
-Execute high-throughput batch simulation benchmarks:
+The REST clustering endpoint receives **raw site observations**. Do not send patient data or expose this service to the public internet without implementing a separate threat model, authentication, authorization, transport security and privacy architecture. The built-in audit logging is process-local; the audit key must remain private, and records are not persisted across restarts. The optional PHI regex screen is heuristic and cannot establish HIPAA/GDPR compliance or comprehensive de-identification.
+
+For container operation, set a strong key in the shell before launching:
 
 ```bash
-python simulator.py 1000
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+docker compose up --build
 ```
 
----
+Compose binds port 8000 to loopback by default. The repository retains illustrative enrichment modules; those produce generic threshold-based assessments rather than implementations of secure multiparty aggregation, Rényi-DP accounting, Byzantine-resilient clustering, or homomorphic encryption.
 
-## 🐳 Container Deployment
+## Development and verification
 
-```bash
-docker build -t federated-clustering-kmeans-agent .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY="your-secure-key" federated-clustering-kmeans-agent
-```
+Run `python -m pytest -q` and `node --check cluster.js && node --test tests/cluster.test.cjs`. GitHub Actions tests Python 3.10–3.12 and Node.js 22. The codebase has no browser Python dependency or production JavaScript dependencies.
 
-Or using Docker Compose:
+Review [`agents/`](agents/) for legacy audit and telemetry workers, [`fed_kmeans/`](fed_kmeans/) for the k-means simulation and its original threshold agents, [`tests/`](tests/) for regression tests, and [`web/`](web/) for the local FastAPI audit console.
 
-```bash
-docker-compose up -d
-```
+## License
 
----
-
-## 📁 Project Structure
-
-```
-federated-clustering-kmeans-agent/
-├── agents/                  # Multi-agent evaluation system
-│   ├── api.py              # FastAPI REST endpoints
-│   ├── base.py             # Security, PHI guard, audit trail
-│   ├── models.py           # Pydantic data models
-│   ├── supervisor.py       # Master orchestrator
-│   ├── workers.py          # Specialized evaluation workers
-│   ├── llm_factory.py      # LLM provider factory
-│   ├── learning.py         # Bayesian calibration engine
-│   ├── metrics.py          # Prometheus metrics collector
-│   └── streamer.py         # WebSocket telemetry broadcaster
-├── fed_kmeans/             # Federated K-means clustering module
-│   ├── agents.py           # Sub-agent coordination
-│   ├── engine.py           # Core algorithmic engine
-│   ├── models.py           # Data models
-│   ├── cli.py              # CLI interface
-│   └── server.py           # FastAPI server factory
-├── tests/                  # Test suite
-├── web/                    # Operations console (HTML)
-├── cli.py                  # Main CLI entry point
-├── enrichment.py           # Domain-specific enrichment engines
-├── simulator.py            # High-throughput simulation
-├── pyproject.toml          # Project configuration
-├── Dockerfile              # Container build
-└── docker-compose.yml      # Container orchestration
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT; see [LICENSE](LICENSE).

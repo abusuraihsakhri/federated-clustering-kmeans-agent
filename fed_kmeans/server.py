@@ -15,7 +15,7 @@ def create_app():
 
         app = FastAPI(
             title="FedKMeans: Privacy-Preserving Federated Lloyd's Clustering Agent",
-            description="Computes optimal cluster centroids across multi-site diabetic cohorts with local cluster sum updates and differential privacy perturbation.",
+            description="Runs threshold-based telemetry audits; this legacy endpoint does not perform clustering or differential privacy.",
             version="2.0.0-FRONTIER",
         )
 
