@@ -31,6 +31,16 @@ jobs:
         python -m compileall -q agents fed_kmeans cli.py simulator.py enrichment.py
         python -m pytest -q
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: Validate browser simulator
+      run: |
+        node --check cluster.js
+        node --test tests/cluster.test.cjs
+
     - name: Security SAST & Zero-PHI Audit
       run: |
         python -c "
