@@ -24,8 +24,8 @@ class SystemIntegrityStatus(str, Enum):
 class SystemTaskPayload(BaseModel):
     task_id: str = Field(..., min_length=1, max_length=128, description="Unique task / case identifier")
     target_identifier: str = Field(..., min_length=1, max_length=128, description="Entity, patient key, or genomic/cryptographic target")
-    primary_metric: float = Field(..., description="Primary domain measurement or score")
-    secondary_metric: float = Field(default=0.0, description="Secondary kinetic or confidence score")
+    primary_metric: float = Field(..., allow_inf_nan=False, description="Primary domain measurement or score")
+    secondary_metric: float = Field(default=0.0, allow_inf_nan=False, description="Secondary kinetic or confidence score")
     status_descriptor: str = Field(default="NOMINAL", max_length=64, description="Status code or phenotype descriptor")
     is_critical_flag: bool = Field(default=False, description="Emergency escalation or high priority trigger")
     attributes: Dict[str, Any] = Field(default_factory=dict, description="Metadata key-value pairs")
@@ -37,7 +37,10 @@ class SystemTaskPayload(BaseModel):
         """Prevent path traversal and injection in identifiers."""
         if any(seq in v for seq in ("..", "//", "\\", "\x00")):
             raise ValueError(f"Identifier contains invalid characters: {v!r}")
-        return v.strip()
+        cleaned = v.strip()
+        if not cleaned:
+            raise ValueError("Identifier may not be blank")
+        return cleaned
 
 
 class AgentAlert(BaseModel):
